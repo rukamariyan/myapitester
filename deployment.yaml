@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-tester
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-tester
+  template:
+    metadata:
+      labels:
+        app: api-tester
+    spec:
+      containers:
+      - name: api-tester
+        image: <your-ecr-url>/api-tester:latest
+        ports:
+        - containerPort: 5000
