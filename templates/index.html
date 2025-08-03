@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}API Tester - Request Builder{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Collections</h6>
+                    <a href="{{ url_for('collections') }}" class="btn btn-sm btn-outline-secondary">
+                        <i data-feather="plus"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if collections %}
+                        <div class="list-group list-group-flush">
+                            {% for collection in collections %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong>{{ collection.name }}</strong>
+                                        <span class="badge bg-secondary">{{ collection.requests|length }}</span>
+                                    </div>
+                                    {% if collection.requests %}
+                                        <div class="mt-2">
+                                            {% for req in collection.requests %}
+                                                <div class="d-flex align-items-center py-1 px-2 rounded hover-bg-light cursor-pointer load-request" 
+                                                     data-request-id="{{ req.id }}">
+                                                    <span class="badge bg-{{ 'success' if req.method == 'GET' else 'warning' if req.method == 'POST' else 'info' if req.method == 'PUT' else 'danger' if req.method == 'DELETE' else 'secondary' }} me-2">
+                                                        {{ req.method }}
+                                                    </span>
+                                                    <small class="text-truncate">{{ req.name }}</small>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-3 text-center text-muted">
+                            <i data-feather="folder" class="mb-2"></i>
+                            <p>No collections yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Environment Selector -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Active Environment</h6>
+                </div>
+                <div class="card-body">
+                    {% if active_env %}
+                        <div class="d-flex align-items-center">
+                            <i data-feather="globe" class="me-2 text-success"></i>
+                            <span>{{ active_env.name }}</span>
+                        </div>
+                    {% else %}
+                        <div class="text-muted">
+                            <i data-feather="globe" class="me-2"></i>
+                            No environment selected
+                        </div>
+                    {% endif %}
+                    <a href="{{ url_for('environments') }}" class="btn btn-sm btn-outline-secondary mt-2">
+                        Manage Environments
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Request Panel -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Request Builder</h5>
+                </div>
+                <div class="card-body">
+                    <form id="requestForm">
+                        <!-- Request URL and Method -->
+                        <div class="row mb-3">
+                            <div class="col-md-2">
+                                <select class="form-select" id="method" name="method">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="PUT">PUT</option>
+                                    <option value="DELETE">DELETE</option>
+                                    <option value="PATCH">PATCH</option>
+                                    <option value="HEAD">HEAD</option>
+                                    <option value="OPTIONS">OPTIONS</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <input type="url" class="form-control" id="url" name="url" 
+                                       placeholder="Enter request URL (supports {{variables}})" required>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i data-feather="send" class="me-1"></i>Send
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Request Configuration Tabs -->
+                        <ul class="nav nav-tabs" id="requestTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="params-tab" data-bs-toggle="tab" data-bs-target="#params" type="button">
+                                    Headers
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="body-tab" data-bs-toggle="tab" data-bs-target="#body" type="button">
+                                    Body
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="auth-tab" data-bs-toggle="tab" data-bs-target="#auth" type="button">
+                                    Authorization
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content mt-3" id="requestTabsContent">
+                            <!-- Headers Tab -->
+                            <div class="tab-pane fade show active" id="params" role="tabpanel">
+                                <div class="row mb-2">
+                                    <div class="col-md-5"><strong>Key</strong></div>
+                                    <div class="col-md-5"><strong>Value</strong></div>
+                                    <div class="col-md-2"><strong>Action</strong></div>
+                                </div>
+                                <div id="headersContainer">
+                                    <div class="row mb-2 header-row">
+                                        <div class="col-md-5">
+                                            <input type="text" class="form-control header-key" placeholder="Header name">
+                                        </div>
+                                        <div class="col-md-5">
+                                            <input type="text" class="form-control header-value" placeholder="Header value">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-header">
+                                                <i data-feather="trash-2"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="addHeader">
+                                    <i data-feather="plus" class="me-1"></i>Add Header
+                                </button>
+                            </div>
+
+                            <!-- Body Tab -->
+                            <div class="tab-pane fade" id="body" role="tabpanel">
+                                <div class="mb-3">
+                                    <label for="bodyType" class="form-label">Body Type</label>
+                                    <select class="form-select" id="bodyType" name="body_type">
+                                        <option value="json">JSON</option>
+                                        <option value="form">Form Data</option>
+                                        <option value="raw">Raw Text</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="requestBody" class="form-label">Body Content</label>
+                                    <textarea class="form-control" id="requestBody" name="body" rows="8" 
+                                              placeholder="Enter request body..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Authorization Tab -->
+                            <div class="tab-pane fade" id="auth" role="tabpanel">
+                                <div class="mb-3">
+                                    <label for="authType" class="form-label">Authorization Type</label>
+                                    <select class="form-select" id="authType" name="auth_type">
+                                        <option value="">No Auth</option>
+                                        <option value="bearer">Bearer Token</option>
+                                        <option value="apikey">API Key</option>
+                                        <option value="basic">Basic Auth</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Bearer Token -->
+                                <div id="bearerTokenAuth" class="auth-section d-none">
+                                    <div class="mb-3">
+                                        <label for="bearerToken" class="form-label">Token</label>
+                                        <input type="text" class="form-control" id="bearerToken" placeholder="Enter bearer token">
+                                    </div>
+                                </div>
+
+                                <!-- API Key -->
+                                <div id="apiKeyAuth" class="auth-section d-none">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label for="apiKeyLocation" class="form-label">Add to</label>
+                                            <select class="form-select" id="apiKeyLocation">
+                                                <option value="header">Header</option>
+                                                <option value="query">Query Params</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="apiKeyName" class="form-label">Key</label>
+                                            <input type="text" class="form-control" id="apiKeyName" placeholder="API Key name">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="apiKeyValue" class="form-label">Value</label>
+                                            <input type="text" class="form-control" id="apiKeyValue" placeholder="API Key value">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Basic Auth -->
+                                <div id="basicAuth" class="auth-section d-none">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="basicUsername" class="form-label">Username</label>
+                                            <input type="text" class="form-control" id="basicUsername" placeholder="Username">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="basicPassword" class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="basicPassword" placeholder="Password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Request -->
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#saveRequestModal">
+                                    <i data-feather="save" class="me-1"></i>Save Request
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Response Panel -->
+            <div class="card mt-3" id="responsePanel" style="display: none;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Response</h6>
+                    <div>
+                        <span id="responseStatus" class="badge"></span>
+                        <span id="responseTime" class="badge bg-info ms-1"></span>
+                        <span id="responseSize" class="badge bg-secondary ms-1"></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Response Tabs -->
+                    <ul class="nav nav-tabs" id="responseTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="response-body-tab" data-bs-toggle="tab" data-bs-target="#response-body" type="button">
+                                Body
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="response-headers-tab" data-bs-toggle="tab" data-bs-target="#response-headers" type="button">
+                                Headers
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-3" id="responseTabsContent">
+                        <!-- Response Body -->
+                        <div class="tab-pane fade show active" id="response-body" role="tabpanel">
+                            <pre><code id="responseBody" class="language-json"></code></pre>
+                        </div>
+
+                        <!-- Response Headers -->
+                        <div class="tab-pane fade" id="response-headers" role="tabpanel">
+                            <div id="responseHeaders"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Request Modal -->
+<div class="modal fade" id="saveRequestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('save_request') }}" method="post" id="saveRequestForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="requestName" class="form-label">Request Name</label>
+                        <input type="text" class="form-control" id="requestName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="saveToCollection" class="form-label">Save to Collection</label>
+                        <select class="form-select" id="saveToCollection" name="collection_id">
+                            <option value="">Select Collection</option>
+                            {% for collection in collections %}
+                                <option value="{{ collection.id }}">{{ collection.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const requestForm = document.getElementById('requestForm');
+    const authTypeSelect = document.getElementById('authType');
+    const authSections = document.querySelectorAll('.auth-section');
+    
+    // Handle auth type changes
+    authTypeSelect.addEventListener('change', function() {
+        authSections.forEach(section => section.classList.add('d-none'));
+        
+        const selectedType = this.value;
+        if (selectedType) {
+            const targetSection = document.getElementById(selectedType + 'Auth') || 
+                                 document.getElementById(selectedType + 'TokenAuth');
+            if (targetSection) {
+                targetSection.classList.remove('d-none');
+            }
+        }
+    });
+    
+    // Add header functionality
+    document.getElementById('addHeader').addEventListener('click', function() {
+        const container = document.getElementById('headersContainer');
+        const newRow = document.querySelector('.header-row').cloneNode(true);
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        container.appendChild(newRow);
+        feather.replace();
+    });
+    
+    // Remove header functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-header')) {
+            const headerRows = document.querySelectorAll('.header-row');
+            if (headerRows.length > 1) {
+                e.target.closest('.header-row').remove();
+            }
+        }
+    });
+    
+    // Load request functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.load-request')) {
+            const requestId = e.target.closest('.load-request').dataset.requestId;
+            loadRequest(requestId);
+        }
+    });
+});
+</script>
+{% endblock %}

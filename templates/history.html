@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}API Tester - History{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Request History</h2>
+        {% if history %}
+            <form action="{{ url_for('clear_history') }}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to clear all history?')">
+                    <i data-feather="trash-2" class="me-1"></i>Clear History
+                </button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if history %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Method</th>
+                                        <th>URL</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                        <th>Timestamp</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in history %}
+                                        {% set request_data = entry.get_request_data() %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if request_data.method == 'GET' else 'warning' if request_data.method == 'POST' else 'info' if request_data.method == 'PUT' else 'danger' if request_data.method == 'DELETE' else 'secondary' }}">
+                                                    {{ request_data.method or 'GET' }}
+                                                </span>
+                                            </td>
+                                            <td class="text-truncate" style="max-width: 300px;">
+                                                <span title="{{ request_data.url or '' }}">{{ request_data.url or 'Unknown URL' }}</span>
+                                            </td>
+                                            <td>
+                                                {% if entry.status_code %}
+                                                    <span class="badge bg-{{ 'success' if entry.status_code < 300 else 'warning' if entry.status_code < 400 else 'danger' }}">
+                                                        {{ entry.status_code }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Error</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if entry.response_time %}
+                                                    {{ "%.0f"|format(entry.response_time * 1000) }}ms
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary view-details" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#historyDetailsModal"
+                                                        data-entry-id="{{ entry.id }}">
+                                                    <i data-feather="eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i data-feather="clock" size="64" class="text-muted mb-3"></i>
+            <h4 class="text-muted">No Request History</h4>
+            <p class="text-muted">Your request history will appear here as you send API requests.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i data-feather="send" class="me-1"></i>Send Your First Request
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- History Details Modal -->
+<div class="modal fade" id="historyDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Request Details -->
+                    <div class="col-md-6">
+                        <h6>Request</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <strong>Method & URL:</strong>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <span id="modalMethod" class="badge me-2"></span>
+                                        <code id="modalUrl" class="flex-grow-1"></code>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <strong>Headers:</strong>
+                                    <pre id="modalRequestHeaders" class="mt-1 p-2 bg-light rounded small"></pre>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <strong>Body:</strong>
+                                    <pre id="modalRequestBody" class="mt-1 p-2 bg-light rounded small"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Response Details -->
+                    <div class="col-md-6">
+                        <h6>Response</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>Status:</strong>
+                                            <span id="modalStatus" class="badge ms-1"></span>
+                                        </div>
+                                        <div>
+                                            <strong>Time:</strong>
+                                            <span id="modalTime" class="badge bg-info ms-1"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <strong>Response Headers:</strong>
+                                    <pre id="modalResponseHeaders" class="mt-1 p-2 bg-light rounded small"></pre>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <strong>Response Body:</strong>
+                                    <pre id="modalResponseBody" class="mt-1 p-2 bg-light rounded small"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // View details functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.view-details')) {
+            const entryId = e.target.closest('.view-details').dataset.entryId;
+            
+            // Find the entry in the history data
+            const historyData = [
+                {% for h in history %}
+                {{ h.to_dict()|tojson }},
+                {% endfor %}
+            ];
+            const entry = historyData.find(h => h.id == entryId);
+            
+            if (entry) {
+                // Populate modal with entry data
+                const requestData = entry.request_data;
+                const responseData = entry.response_data;
+                
+                // Request details
+                document.getElementById('modalMethod').textContent = requestData.method || 'GET';
+                document.getElementById('modalMethod').className = `badge bg-${requestData.method === 'GET' ? 'success' : requestData.method === 'POST' ? 'warning' : requestData.method === 'PUT' ? 'info' : requestData.method === 'DELETE' ? 'danger' : 'secondary'}`;
+                document.getElementById('modalUrl').textContent = requestData.url || 'Unknown URL';
+                document.getElementById('modalRequestHeaders').textContent = JSON.stringify(requestData.headers || {}, null, 2);
+                document.getElementById('modalRequestBody').textContent = requestData.body || 'No body';
+                
+                // Response details
+                if (entry.status_code) {
+                    document.getElementById('modalStatus').textContent = entry.status_code;
+                    document.getElementById('modalStatus').className = `badge bg-${entry.status_code < 300 ? 'success' : entry.status_code < 400 ? 'warning' : 'danger'}`;
+                } else {
+                    document.getElementById('modalStatus').textContent = 'Error';
+                    document.getElementById('modalStatus').className = 'badge bg-secondary';
+                }
+                
+                document.getElementById('modalTime').textContent = entry.response_time ? `${Math.round(entry.response_time * 1000)}ms` : '-';
+                
+                if (responseData && responseData.headers) {
+                    document.getElementById('modalResponseHeaders').textContent = JSON.stringify(responseData.headers, null, 2);
+                } else {
+                    document.getElementById('modalResponseHeaders').textContent = 'No headers';
+                }
+                
+                if (responseData && responseData.body) {
+                    document.getElementById('modalResponseBody').textContent = typeof responseData.body === 'object' ? 
+                        JSON.stringify(responseData.body, null, 2) : responseData.body;
+                } else if (responseData && responseData.error) {
+                    document.getElementById('modalResponseBody').textContent = responseData.error;
+                } else {
+                    document.getElementById('modalResponseBody').textContent = 'No response body';
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

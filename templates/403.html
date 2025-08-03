@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied - API Tester{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <i data-feather="alert-triangle" size="64" class="text-warning mb-3"></i>
+            <h1 class="display-4 mb-3">Access Denied</h1>
+            <p class="lead text-muted mb-4">
+                There was an issue with authentication. Please try signing in again.
+            </p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i data-feather="home" class="me-2"></i>Go to Home
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary ms-2">
+                <i data-feather="log-in" class="me-2"></i>Try Sign In Again
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

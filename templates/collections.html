@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}API Tester - Collections{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Collections</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+                    <i data-feather="plus" class="me-1"></i>New Collection
+                </button>
+            </div>
+
+            {% if collections %}
+                <div class="row">
+                    {% for collection in collections %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">{{ collection.name }}</h6>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                            <i data-feather="more-horizontal"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" href="{{ url_for('export_collection', collection_id=collection.id) }}">
+                                                    <i data-feather="download" class="me-2"></i>Export
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form action="{{ url_for('delete_collection', collection_id=collection.id) }}" method="post" class="d-inline">
+                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure?')">
+                                                        <i data-feather="trash-2" class="me-2"></i>Delete
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    {% if collection.description %}
+                                        <p class="text-muted">{{ collection.description }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            {{ collection.requests|length }} request{{ 's' if collection.requests|length != 1 else '' }}
+                                        </small>
+                                        <small class="text-muted">
+                                            Created {{ collection.created_at.strftime('%Y-%m-%d') }}
+                                        </small>
+                                    </div>
+
+                                    {% if collection.requests %}
+                                        <div class="mt-3">
+                                            <h6>Requests:</h6>
+                                            {% for request in collection.requests %}
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <span class="badge bg-{{ 'success' if request.method == 'GET' else 'warning' if request.method == 'POST' else 'info' if request.method == 'PUT' else 'danger' if request.method == 'DELETE' else 'secondary' }} me-2">
+                                                        {{ request.method }}
+                                                    </span>
+                                                    <span class="text-truncate">{{ request.name }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i data-feather="folder" size="64" class="text-muted mb-3"></i>
+                    <h4 class="text-muted">No Collections Yet</h4>
+                    <p class="text-muted">Create your first collection to organize your API requests.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+                        <i data-feather="plus" class="me-1"></i>Create Collection
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Import Collection</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Import a collection from a JSON file.</p>
+                    <div class="mb-3">
+                        <input type="file" class="form-control" id="importFile" accept=".json">
+                    </div>
+                    <button type="button" class="btn btn-outline-primary w-100" id="importBtn">
+                        <i data-feather="upload" class="me-1"></i>Import Collection
+                    </button>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ collections|length }}</h4>
+                            <small class="text-muted">Collections</small>
+                        </div>
+                        <div class="col-6">
+                            {% set total_requests = collections|map(attribute='requests')|map('length')|sum if collections else 0 %}
+                            <h4 class="text-success">{{ total_requests }}</h4>
+                            <small class="text-muted">Total Requests</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Collection Modal -->
+<div class="modal fade" id="createCollectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Collection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('create_collection') }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="collectionName" class="form-label">Collection Name</label>
+                        <input type="text" class="form-control" id="collectionName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="collectionDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="collectionDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Collection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
+    
+    importBtn.addEventListener('click', function() {
+        const file = importFile.files[0];
+        if (!file) {
+            alert('Please select a JSON file to import.');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const jsonData = JSON.parse(e.target.result);
+                
+                // Send to server
+                fetch('{{ url_for("import_collection") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Error importing collection.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error importing collection.');
+                });
+            } catch (error) {
+                alert('Invalid JSON file.');
+            }
+        };
+        reader.readAsText(file);
+    });
+});
+</script>
+{% endblock %}

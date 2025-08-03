@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}API Tester - Welcome{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <!-- Hero Section -->
+            <div class="mb-5">
+                <div class="mb-4">
+                    <i data-feather="zap" size="64" class="text-primary"></i>
+                </div>
+                <h1 class="display-4 fw-bold mb-3">API Tester</h1>
+                <p class="lead text-muted mb-4">
+                    A powerful, feature-rich API testing tool that lets you send HTTP requests, manage collections, 
+                    organize environments, and track your request history. Perfect for developers, testers, and API enthusiasts.
+                </p>
+                <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg me-2">
+                    <i data-feather="user-plus" class="me-2"></i>Get Started - Sign Up
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                    <i data-feather="log-in" class="me-2"></i>Sign In
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row g-4 mt-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i data-feather="send" size="48" class="text-primary mb-3"></i>
+                    <h5 class="card-title">HTTP Requests</h5>
+                    <p class="card-text text-muted">
+                        Send GET, POST, PUT, DELETE, and other HTTP requests with full header and body support.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i data-feather="folder" size="48" class="text-success mb-3"></i>
+                    <h5 class="card-title">Collections</h5>
+                    <p class="card-text text-muted">
+                        Organize your API requests into collections for better management and reusability.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i data-feather="settings" size="48" class="text-info mb-3"></i>
+                    <h5 class="card-title">Environments</h5>
+                    <p class="card-text text-muted">
+                        Manage environment variables to easily switch between different API configurations.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i data-feather="clock" size="48" class="text-warning mb-3"></i>
+                    <h5 class="card-title">History</h5>
+                    <p class="card-text text-muted">
+                        Track all your API requests with detailed response information and timing data.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Detail Section -->
+    <div class="row mt-5">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i data-feather="shield" class="me-2 text-primary"></i>Authentication Support
+                    </h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>Bearer Token Authentication</li>
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>API Key (Header/Query)</li>
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>Basic Authentication</li>
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>Environment Variable Support</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i data-feather="code" class="me-2 text-primary"></i>Request Features
+                    </h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>JSON, Form Data, Raw Text Bodies</li>
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>Custom Headers Management</li>
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>Response Syntax Highlighting</li>
+                        <li class="mb-2"><i data-feather="check" class="me-2 text-success"></i>Import/Export Collections</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row mt-5 mb-5">
+        <div class="col-12 text-center">
+            <div class="bg-primary bg-opacity-10 rounded p-4">
+                <h3 class="mb-3">Ready to start testing your APIs?</h3>
+                <p class="text-muted mb-4">Create an account or sign in to access all features and keep your data secure.</p>
+                <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg me-2">
+                    <i data-feather="user-plus" class="me-2"></i>Create Account
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                    <i data-feather="log-in" class="me-2"></i>Sign In
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
